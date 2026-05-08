@@ -1,0 +1,33 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mirotalk
+spec:
+  endpointSelector:
+    matchLabels:
+      app: mirotalk
+  ingress:
+    # Allow intra-namespace traffic
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: mirotalk
+    # Allow Cilium Gateway proxy (LAN HTTPS)
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+    # Allow cloudflared tunnel pods (Cloudflare Tunnel)
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: cloudflare-gateway
+      toPorts:
+        - ports:
+            - port: "3000"
+              protocol: TCP
+  egress:
+    # Allow all egress (signaling, STUN/TURN access, generic web traffic)
+    - toEntities:
+        - world
+        - cluster
